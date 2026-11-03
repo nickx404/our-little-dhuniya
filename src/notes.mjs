@@ -119,7 +119,7 @@ export function initNotes({escape:e,config,refresh}) {
  }catch{accessKey=location.hash.match(/^#notes\/([A-Za-z0-9_-]{43})$/)?.[1]||'';}
  async function openPrivatePage() {
   if(!client)return;
-  if(!accessKey){phase='locked';message='Open the private link on this device once. After that, ClickNotes is ready whenever you come back.';refresh();return;}
+  if(!accessKey){phase='locked';message='Open the private link on this device once. After that, R Notes is ready whenever you come back.';refresh();return;}
   try {
    let {data:{session:current},error}=await client.auth.getSession();
    if(error)throw error;
