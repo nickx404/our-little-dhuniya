@@ -8,19 +8,19 @@ The `.github/workflows/site.yml` workflow checks JavaScript and local assets, pa
 
 In **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. No deployment secret, package installation, or framework build is required. All asset paths are relative so the site works under `/our-little-dhuniya/`.
 
-This deployment is public and contains sample memories. The original media prototype has no private permanent media storage; R Notes has its own private Supabase access. Keep personal photos and credentials out of this repository until private storage and access are implemented.
+This deployment is public and contains sample memories. The original media prototype has no private permanent media storage; Our Notes has its own private Supabase access. Keep personal photos and credentials out of this repository until private storage and access are implemented.
 
 ## Bucket list
 
 Our Bucket List adds wishes with a title, story, category and timing. Wishes can be edited, filtered, checked off, and reopened. Wishes and checkmarks are saved in this browser only; they do not sync between devices. Initial wishes are samples. A failed save keeps the form open, and damaged saved data is left untouched.
 
-The published navigation is Little Moments, Memory Books, Keepsakes, Our Bucket List, and R Notes. The remaining planned pages are being refined locally and are not included in this release.
+The published navigation is Little Moments, Memory Books, Keepsakes, Our Bucket List, and Our Notes. The remaining planned pages are being refined locally and are not included in this release.
 
-## R Notes
+## Our Notes
 
-R Notes is an expanding plain-text writing page inside the same website, with only Undo and Redo as writing controls. Every input event immediately writes a Yjs update to IndexedDB and starts a Supabase insert. There is no debounce, manual Save button, or Edit mode. Whitespace and line breaks are preserved. Supabase Realtime exchanges updates; Yjs merges simultaneous edits and scopes undo to the current writer.
+Our Notes is an expanding plain-text writing page inside the same website, with only Undo and Redo as writing controls. Every input event immediately writes a Yjs update to IndexedDB and starts a Supabase insert. There is no debounce, manual Save button, or Edit mode. Whitespace and line breaks are preserved. Supabase Realtime exchanges updates; Yjs merges simultaneous edits and scopes undo to the current writer.
 
-Open the private `#notes/<invite>` link once per browser/device. It automatically creates a device session and joins the private page. There is no email/password form. After pairing, the regular R Notes tab works on that device. Anyone holding the link can join; share it privately. The link is not in GitHub or the deployed files. Its local recovery copy is in the ignored `.env.notes-invite` file in the release checkout. Clearing site data requires opening the private link again.
+Open the private `#notes/<invite>` link once per browser/device. It automatically creates a device session and joins the private page. There is no email/password form. After pairing, the regular Our Notes tab works on that device. Anyone holding the link can join; share it privately. The link is not in GitHub or the deployed files. Its local recovery copy is in the ignored `.env.notes-invite` file in the release checkout. Clearing site data requires opening the private link again.
 
 The live project uses `supabase/notes.sql` and `supabase/private-link.sql`. Only approved members can read and append updates. The public publishable key in `dist/notes-config.mjs` is intentional; it cannot grant access to notes without the private link/membership. No database password or service-role key is used by the site. Invite hashes live in an unexposed private schema. Previously created password accounts are not required by the page.
 
