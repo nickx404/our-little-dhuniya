@@ -15,3 +15,5 @@ for(const cssFile of ['mali','patrick','typewriter']){
  for(const font of fontCss.matchAll(/url\(\.\/([^)]+)\)/g))assert(existsSync(new URL(`assets/${font[1]}`,root)),`Missing font: ${font[1]}`);
 }
 console.log('Static checks passed: local assets, fonts, responsive and motion safeguards.');
+
+await import('./bucket-list-check.mjs');

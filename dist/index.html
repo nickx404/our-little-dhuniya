@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./assets/patrick.css">
   <link rel="stylesheet" href="./assets/typewriter.css">
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./bucket-list.css">
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -23,7 +24,7 @@
   <div class="paper-grain" aria-hidden="true"></div>
   <header class="site-header">
     <a href="#moments" class="wordmark" aria-label="For us, home">for us<span class="wordmark-heart">♡</span></a>
-    <nav aria-label="Our collection"><a href="#moments" data-nav="moments" class="active">little moments</a><a href="#books" data-nav="books">memory books</a><a href="#keepsakes" data-nav="keepsakes">keepsakes</a></nav>
+    <nav aria-label="Our collection"><a href="#moments" data-nav="moments" class="active">little moments</a><a href="#books" data-nav="books">memory books</a><a href="#keepsakes" data-nav="keepsakes">keepsakes</a><a href="#future" data-nav="future">our bucket list</a></nav>
     <button class="add-button" data-action="add"><span aria-hidden="true">＋</span> add a little something</button>
   </header>
   <main id="main">
@@ -53,6 +54,7 @@
       <button class="rose-button" type="submit">keep this moment <span aria-hidden="true">♡</span></button>
     </form>
   </dialog>
+  <dialog id="journal-dialog" aria-labelledby="journal-title"></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./app.js"></script>
 </body>

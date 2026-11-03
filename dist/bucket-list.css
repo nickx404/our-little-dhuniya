@@ -1,0 +1,57 @@
+.local-note{text-align:center;font-size:11px;color:var(--muted);line-height:1.9;margin:35px auto 15px;max-width:620px}
+.journal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:22px;margin:12px 0 25px}
+.journal-toolbar p{margin:0}
+.journal-toolbar .rose-button{white-space:normal}
+.journal-filters{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;margin:20px 0 45px}
+.journal-filters button{font:18px 'Patrick Hand';padding:9px 12px;background:transparent;border-bottom:2px solid transparent}
+.journal-filters button[aria-pressed=true]{border-color:var(--rose);color:var(--rose);background:#fff8f380;border-radius:5px 5px 0 0}
+.story-text{white-space:pre-wrap;overflow-wrap:anywhere;font:21px/1.6 'Patrick Hand'}
+.milestone-paper .story-text{margin:12px 0}
+.edit-note{font-size:15px;display:block;text-align:left;overflow-wrap:anywhere}
+.wish-wall{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px 30px;padding:5px 12px 25px}
+.wish-paper{position:relative;display:flex;flex-direction:column;background:#fff4dc;box-shadow:2px 5px 10px var(--shadow);padding:23px 25px;transform:rotate(var(--tilt));min-height:310px;overflow-wrap:anywhere}
+.wish-paper:nth-child(3n+2){background:#e2ecf1}
+.wish-paper:nth-child(3n){background:#e7deed}
+.wish-paper:before{content:'';position:absolute;top:-10px;left:38%;width:65px;height:23px;background:#e6bcc9b8;transform:rotate(5deg)}
+.wish-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.wish-top>span{font:10px 'Special Elite';letter-spacing:1px;color:#806272}
+.wish-check{border:1px solid #aa7a8f;background:#fffcf780;border-radius:5px;width:38px;height:38px;font:24px 'Patrick Hand';color:var(--rose);flex-shrink:0}
+.wish-check:hover{background:#fffaf5}
+.wish-paper h2{font:29px/1.2 'Patrick Hand';font-weight:400;margin:22px 0 6px}
+.wish-paper p{margin:10px 0 20px;font-size:20px}
+.wish-bottom{margin-top:auto}
+.wish-bottom>.handwritten{font-size:16px}
+.wish-done{background:#e4e8dd!important}
+.wish-done h2{text-decoration:line-through;text-decoration-color:#b88ba1;text-decoration-thickness:1px}
+.journal-empty{grid-column:1/-1;text-align:center;padding:40px 15px 60px}
+.journal-empty>span{font:50px 'Patrick Hand';color:var(--rose)}
+.journal-empty h2{font:32px 'Patrick Hand';font-weight:400}
+.journal-empty p{font:21px 'Patrick Hand';margin-bottom:25px}
+.form-error{font-size:12px;color:#94344e;line-height:1.7;margin:0}
+.form-error:empty{display:none}
+#journal-dialog{width:560px;max-height:90dvh;overflow-y:auto}
+textarea:focus-visible{outline:3px solid #925776;outline-offset:5px}
+.journal-toolbar button:active,.wish-check:active{transform:translateY(1px)}
+@media(max-width:1050px){.wish-wall{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){.journal-toolbar{align-items:flex-start;gap:12px;margin:6px 0 22px}
+.journal-toolbar p{font-size:16px;max-width:52%}
+.journal-toolbar .rose-button{padding:10px 12px;font-size:11px}
+.journal-filters{gap:3px 9px;margin:12px 0 30px}
+.journal-filters button{font-size:16px;padding:8px}
+.story-text{font-size:20px}
+.wish-wall{grid-template-columns:1fr;gap:30px;padding:5px 10px 20px}
+.wish-paper{min-height:265px;padding:22px 25px}
+.wish-paper h2{font-size:30px}
+.wish-paper p{font-size:21px}
+.wish-bottom{display:flex;flex-wrap:wrap;gap:4px 15px;align-items:center}
+.wish-bottom>.handwritten{font-size:17px}
+.local-note{font-size:10px;margin-top:25px}
+#journal-dialog{padding:30px 22px}
+.journal-toolbar .rose-button{max-width:48%}
+}
+@media(prefers-reduced-motion:no-preference){.wish-wall{animation:appear .4s ease-out}
+}
+nav{gap:26px}nav a{font-size:13px}.intro-friends{bottom:0}.intro{padding-bottom:55px}
+@media(max-width:1050px){nav{gap:18px}}
+@media(max-width:760px){.site-header nav{gap:0 22px;flex-wrap:wrap}.site-header nav a{font-size:11px}.intro{padding-bottom:28px}}

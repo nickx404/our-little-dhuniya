@@ -1,3 +1,4 @@
+import {initBucketList} from './bucket-list.mjs';
 const asset = name => `./assets/${name}`;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const flower = (className = '') => `<svg class="${className}" aria-hidden="true"><use href="#flower"/></svg>`;
@@ -66,12 +67,16 @@ function keepsakesSection() {
  return `<section aria-labelledby="keepsakes-title"><div class="section-intro"><span class="handwritten">not much to anyone else. everything to us.</span><h2 id="keepsakes-title">The little things we kept</h2><p>A ticket, a flower, a scribbled note. A home for the tiny things with a whole story tucked inside.</p></div><div class="keepsake-grid">${keepsakes.map((item,i)=>`<article class="keepsake" style="--tilt:${i%2?-4:3}deg"><button data-keepsake="${item.id}" aria-label="Open ${escape(item.caption)}">${keepsakeObject(item)}</button><h3 class="keepsake-name">${escape(item.caption)}</h3><time class="keepsake-date" datetime="${item.date}">${dateLabel(item.date)}</time><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button></article>`).join('')}<div class="keepsake"><button class="keepsake-upload" data-action="add-keepsake"><span aria-hidden="true">＋</span>something worth keeping<small>add a little keepsake</small></button></div></div></section>`;
 }
 function render() {
- currentSection = ['moments','books','keepsakes'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'moments';
+ currentSection = ['moments','books','keepsakes','future'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'moments';
  document.querySelectorAll('[data-nav]').forEach(el=>{
   el.classList.toggle('active',el.dataset.nav===currentSection);
   if(el.dataset.nav===currentSection) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current');
  });
- if(currentSection==='books') content.innerHTML = booksSection(true);
+ document.querySelector('.intro-note').textContent=currentSection==='future'?'there is still so much waiting for us.':'the big days. the ordinary days. all of it.';
+ document.querySelector('#page-title').innerHTML=currentSection==='future'?'One day, <span>you & me.</span>':'A little collection <span>of us.</span>';
+ document.querySelector('.intro-description').textContent=currentSection==='future'?'Little dates, big dreams, and all the things we want to do together.':'Our photos, our stories, and the little things we never want to forget.';
+ if(currentSection==='future') content.innerHTML = bucketList.future();
+ else if(currentSection==='books') content.innerHTML = booksSection(true);
  else if(currentSection==='keepsakes') content.innerHTML = keepsakesSection();
  else content.innerHTML = `<section aria-labelledby="moments-title"><div class="section-heading"><div><h2 id="moments-title">Little moments, kept close</h2><p class="subtitle">even the blurry ones belong here.</p></div><div class="view-switch" role="group" aria-label="Photo layout"><button data-view="scrapbook" aria-pressed="${view==='scrapbook'}" class="${view==='scrapbook'?'active':''}">scrapbook</button><button data-view="gallery" aria-pressed="${view==='gallery'}" class="${view==='gallery'?'active':''}">gallery</button></div></div><div class="wall ${view==='gallery'?'gallery':''}">${moments.map((m,i)=>photoCard(m,i)).join('')}<aside class="little-note">“It's the little things<br>with you.”<small>always the little things.</small><div class="note-friends"><img src="${asset('otter-pixel.png')}" alt=""><img src="${asset('bunny-pixel.png')}" alt=""></div></aside><button class="photo-card add-photo" data-action="add" style="--tilt:-2deg"><span aria-hidden="true">＋</span><span>there's room for more.</span><small>add a moment</small></button></div></section>`;
 }
@@ -179,8 +184,9 @@ document.addEventListener('click',event=>{
  }
  const action=target.dataset.action;
  if(action==='close'){if(target.closest('dialog')===viewer)closeViewer();else target.closest('dialog')?.close();}
- if(action==='add'||action==='add-keepsake')showAdd(action==='add-keepsake');
- if(action==='about')openViewer('<button class="close-button" data-action="close" aria-label="Close">×</button><div class="about-copy"><span class="handwritten">a little space, just for us</span><h2>Every little thing belongs.</h2><p>This is our first visual prototype. The photographs, dates, and stories are sample content. The bunny is her; the otter is you.</p><p>You can explore books, turn pages, and try your own photos or keepsakes. Additions and book placements stay in this tab until you refresh. Telegram, accounts, and shared storage will come later.</p><p>Photo samples: Unsplash. Video sample: MDN’s CC0 flower clip. Fonts: Mali and Patrick Hand (SIL Open Font License); Special Elite (Apache 2.0).</p></div>','photo-viewer');
+ if(action==='add'&&currentSection==='future')bucketList.add();
+ else if(action==='add'||action==='add-keepsake')showAdd(action==='add-keepsake');
+ if(action==='about')openViewer('<button class="close-button" data-action="close" aria-label="Close">×</button><div class="about-copy"><span class="handwritten">a little space, just for us</span><h2>Every little thing belongs.</h2><p>This is our first visual prototype. The photographs, dates, and stories are sample content. The bunny is her; the otter is you.</p><p>You can explore books, turn pages, and try your own photos or keepsakes. Additions and book placements stay in this tab until you refresh. Bucket-list wishes and checkmarks are saved in this browser only. They do not sync between devices. Telegram, accounts, and shared storage will come later.</p><p>Photo samples: Unsplash. Video sample: MDN’s CC0 flower clip. Fonts: Mali and Patrick Hand (SIL Open Font License); Special Elite (Apache 2.0).</p></div>','photo-viewer');
 });
 document.querySelector('#add-form').addEventListener('submit',event=>{
  event.preventDefault();const data=new FormData(event.currentTarget);const file=data.get('file');const kind=data.get('kind');
@@ -211,4 +217,5 @@ window.matchMedia('(max-width:760px)').addEventListener('change',()=>{if(current
 window.addEventListener('hashchange',render);
 window.addEventListener('beforeunload',()=>objectUrls.forEach(url=>URL.revokeObjectURL(url)));
 document.addEventListener('error',event=>{if(event.target instanceof HTMLImageElement){event.target.classList.add('image-error');event.target.alt='This photograph could not load.';}},true);
+const bucketList=initBucketList({escape,render,toast});
 render();

@@ -10,6 +10,12 @@ In **Settings → Pages → Build and deployment**, select **GitHub Actions** as
 
 This deployment is public and contains sample memories. It does not provide authentication or permanent storage. Keep personal photos and credentials out of this repository until private storage and access are implemented.
 
+## Bucket list
+
+Our Bucket List adds wishes with a title, story, category and timing. Wishes can be edited, filtered, checked off, and reopened. Wishes and checkmarks are saved in this browser only; they do not sync between devices. Initial wishes are samples. A failed save keeps the form open, and damaged saved data is left untouched.
+
+The published navigation is Little Moments, Memory Books, Keepsakes, and Our Bucket List. The remaining planned pages are being refined locally and are not included in this release.
+
 ## Included
 
 - Pastel scrapbook wall and gallery views, with individual photo and video viewers.
