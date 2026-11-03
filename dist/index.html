@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6e8eb">
+  <meta name="description" content="A little scrapbook for photographs, memory books, and the things worth keeping.">
+  <title>for us · little moments, kept close</title>
+  <link rel="stylesheet" href="./assets/mali.css">
+  <link rel="stylesheet" href="./assets/patrick.css">
+  <link rel="stylesheet" href="./assets/typewriter.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <symbol id="bow" viewBox="0 0 120 90"><path d="M58 40C33 1 2 7 12 35c5 14 27 15 45 11M63 40C87 0 120 9 108 35c-6 13-28 14-45 11" fill="currentColor" fill-opacity=".28" stroke="currentColor" stroke-width="3"/><path d="M54 46c-3 15-12 25-24 35l15-3 6 8c9-15 10-27 10-40m5 0c1 16 9 30 19 38l-1-13 12 1c-13-9-20-18-24-29" fill="currentColor" fill-opacity=".5" stroke="currentColor" stroke-width="2"/><ellipse cx="61" cy="43" rx="9" ry="8" fill="currentColor"/></symbol>
+      <symbol id="flower" viewBox="0 0 100 130"><path d="M51 72c-7 16 5 32-3 55M49 100c-20-2-27-11-26-18 15-1 25 8 26 18m3 13c20-4 28-14 25-21-16 1-24 10-25 21" stroke="#7e9478" stroke-width="3" fill="#a9b99b"/><g fill="currentColor" stroke="#a67d94" stroke-width="1.2"><ellipse cx="50" cy="29" rx="13" ry="24"/><ellipse cx="50" cy="29" rx="13" ry="24" transform="rotate(60 50 50)"/><ellipse cx="50" cy="29" rx="13" ry="24" transform="rotate(120 50 50)"/><ellipse cx="50" cy="29" rx="13" ry="24" transform="rotate(180 50 50)"/><ellipse cx="50" cy="29" rx="13" ry="24" transform="rotate(240 50 50)"/><ellipse cx="50" cy="29" rx="13" ry="24" transform="rotate(300 50 50)"/></g><circle cx="50" cy="50" r="11" fill="#e9ce8d" stroke="#b5986b" stroke-width="1.5"/></symbol>
+      <symbol id="heart" viewBox="0 0 60 60"><path d="M30 49C22 41 6 31 7 19 8 6 25 6 30 18 38 1 56 10 52 24 49 34 38 44 30 49Z" fill="currentColor" fill-opacity=".15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>
+      <symbol id="spark" viewBox="0 0 50 60"><path d="m25 3 3 23 16 4-16 3-3 24-4-24-16-3 16-4Z" fill="currentColor"/></symbol>
+    </defs>
+  </svg>
+  <div class="paper-grain" aria-hidden="true"></div>
+  <header class="site-header">
+    <a href="#moments" class="wordmark" aria-label="For us, home">for us<span class="wordmark-heart">♡</span></a>
+    <nav aria-label="Our collection"><a href="#moments" data-nav="moments" class="active">little moments</a><a href="#books" data-nav="books">memory books</a><a href="#keepsakes" data-nav="keepsakes">keepsakes</a></nav>
+    <button class="add-button" data-action="add"><span aria-hidden="true">＋</span> add a little something</button>
+  </header>
+  <main id="main">
+    <section class="intro" aria-labelledby="page-title">
+      <svg class="intro-bow" aria-hidden="true"><use href="#bow"/></svg>
+      <p class="intro-note">the big days. the ordinary days. all of it.</p>
+      <h1 id="page-title">A little collection <span>of us.</span></h1>
+      <p class="intro-description">Our photos, our stories, and the little things we never want to forget.</p>
+      <div class="intro-scribble" aria-hidden="true">made of little moments <svg><use href="#heart"/></svg></div>
+      <svg class="intro-flower" aria-hidden="true"><use href="#flower"/></svg>
+      <div class="intro-friends"><img src="./assets/otter-pixel.png" alt="You, the otter"><img src="./assets/bunny-pixel.png" alt="Her, the bunny"><span>you &amp; me</span></div>
+    </section>
+    <div id="content"></div>
+  </main>
+  <footer><span>kept with love, for us <span aria-hidden="true">♡</span></span><p>A first little look · sample memories for now</p><button data-action="about">about this little space</button></footer>
+  <dialog id="viewer" aria-label="Memory viewer"></dialog>
+  <dialog id="add-dialog" aria-labelledby="add-title">
+    <button class="close-button" data-action="close" aria-label="Close">×</button>
+    <span class="handwritten">one more thing to remember</span><h2 id="add-title">Tuck something away.</h2>
+    <p class="dialog-help">Try a photo, video, or keepsake in this preview. It stays in this tab until you refresh.</p>
+    <form id="add-form">
+      <label>What are we keeping?<select name="kind"><option value="photo">A photograph</option><option value="video">A video</option><option value="keepsake">A little keepsake</option></select></label>
+      <label class="file-drop"><span id="file-prompt">Choose a photo or video</span><input type="file" name="file" accept="image/*,video/*" required><span id="file-label">A call screenshot counts, too.</span></label>
+      <p class="dialog-help" id="upload-help"></p>
+      <label>A little caption <span>(if you like)</span><input name="caption" maxlength="120" placeholder="what made this moment yours?"></label>
+      <label>The day<input name="date" type="date" required></label>
+      <button class="rose-button" type="submit">keep this moment <span aria-hidden="true">♡</span></button>
+    </form>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
