@@ -1,3 +1,5 @@
+import {initNotes} from './notes.mjs';
+import {notesConfig} from './notes-config.mjs';
 import {initBucketList} from './bucket-list.mjs';
 const asset = name => `./assets/${name}`;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -67,7 +69,7 @@ function keepsakesSection() {
  return `<section aria-labelledby="keepsakes-title"><div class="section-intro"><span class="handwritten">not much to anyone else. everything to us.</span><h2 id="keepsakes-title">The little things we kept</h2><p>A ticket, a flower, a scribbled note. A home for the tiny things with a whole story tucked inside.</p></div><div class="keepsake-grid">${keepsakes.map((item,i)=>`<article class="keepsake" style="--tilt:${i%2?-4:3}deg"><button data-keepsake="${item.id}" aria-label="Open ${escape(item.caption)}">${keepsakeObject(item)}</button><h3 class="keepsake-name">${escape(item.caption)}</h3><time class="keepsake-date" datetime="${item.date}">${dateLabel(item.date)}</time><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button></article>`).join('')}<div class="keepsake"><button class="keepsake-upload" data-action="add-keepsake"><span aria-hidden="true">＋</span>something worth keeping<small>add a little keepsake</small></button></div></div></section>`;
 }
 function render() {
- currentSection = ['moments','books','keepsakes','future'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'moments';
+ currentSection = ['moments','books','keepsakes','future','notes'].includes(location.hash.slice(1).split('/')[0]) ? location.hash.slice(1).split('/')[0] : 'moments';
  document.querySelectorAll('[data-nav]').forEach(el=>{
   el.classList.toggle('active',el.dataset.nav===currentSection);
   if(el.dataset.nav===currentSection) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current');
@@ -75,7 +77,15 @@ function render() {
  document.querySelector('.intro-note').textContent=currentSection==='future'?'there is still so much waiting for us.':'the big days. the ordinary days. all of it.';
  document.querySelector('#page-title').innerHTML=currentSection==='future'?'One day, <span>you & me.</span>':'A little collection <span>of us.</span>';
  document.querySelector('.intro-description').textContent=currentSection==='future'?'Little dates, big dreams, and all the things we want to do together.':'Our photos, our stories, and the little things we never want to forget.';
- if(currentSection==='future') content.innerHTML = bucketList.future();
+ document.title=`for us · ${document.querySelector(`[data-nav="${currentSection}"]`).textContent}`;
+ document.querySelector('.add-button').hidden=currentSection==='notes';
+ if(currentSection==='notes'){
+  document.querySelector('.intro-note').textContent='nothing to do. just be here, with me.';
+  document.querySelector('#page-title').innerHTML='A little room <span>for our words.</span>';
+  document.querySelector('.intro-description').textContent='A thought, a whole conversation, or a little space between words.';
+  content.innerHTML=notes.render();notes.mount();
+ }
+ else if(currentSection==='future') content.innerHTML = bucketList.future();
  else if(currentSection==='books') content.innerHTML = booksSection(true);
  else if(currentSection==='keepsakes') content.innerHTML = keepsakesSection();
  else content.innerHTML = `<section aria-labelledby="moments-title"><div class="section-heading"><div><h2 id="moments-title">Little moments, kept close</h2><p class="subtitle">even the blurry ones belong here.</p></div><div class="view-switch" role="group" aria-label="Photo layout"><button data-view="scrapbook" aria-pressed="${view==='scrapbook'}" class="${view==='scrapbook'?'active':''}">scrapbook</button><button data-view="gallery" aria-pressed="${view==='gallery'}" class="${view==='gallery'?'active':''}">gallery</button></div></div><div class="wall ${view==='gallery'?'gallery':''}">${moments.map((m,i)=>photoCard(m,i)).join('')}<aside class="little-note">“It's the little things<br>with you.”<small>always the little things.</small><div class="note-friends"><img src="${asset('otter-pixel.png')}" alt=""><img src="${asset('bunny-pixel.png')}" alt=""></div></aside><button class="photo-card add-photo" data-action="add" style="--tilt:-2deg"><span aria-hidden="true">＋</span><span>there's room for more.</span><small>add a moment</small></button></div></section>`;
@@ -217,5 +227,6 @@ window.matchMedia('(max-width:760px)').addEventListener('change',()=>{if(current
 window.addEventListener('hashchange',render);
 window.addEventListener('beforeunload',()=>objectUrls.forEach(url=>URL.revokeObjectURL(url)));
 document.addEventListener('error',event=>{if(event.target instanceof HTMLImageElement){event.target.classList.add('image-error');event.target.alt='This photograph could not load.';}},true);
+const notes=initNotes({escape,config:notesConfig,refresh:()=>{if(currentSection==='notes')render();}});
 const bucketList=initBucketList({escape,render,toast});
 render();

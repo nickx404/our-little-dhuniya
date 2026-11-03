@@ -1,0 +1,18 @@
+{
+  "name": "our-little-dhuniya",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:notes": "esbuild src/notes.mjs --bundle --format=esm --target=es2022 --minify --outfile=dist/notes.mjs",
+    "test:notes": "node --test tests/notes.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "y-indexeddb": "9.0.12",
+    "yjs": "13.6.33"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "fake-indexeddb": "6.2.7"
+  }
+}

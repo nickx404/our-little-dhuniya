@@ -12,7 +12,7 @@ assert(!validBucketList({future:[{...seed.future[0],title:' '}]}));
 assert(!validBucketList({future:[{...seed.future[0],story:'x'.repeat(2001)}]}));
 assert(validBucketList({future:[]}));
 const html=readFileSync(new URL('./dist/index.html',import.meta.url),'utf8');
-assert.deepEqual([...html.matchAll(/data-nav="([^"]+)"/g)].map(m=>m[1]),['moments','books','keepsakes','future']);
+assert.deepEqual([...html.matchAll(/data-nav="([^"]+)"/g)].map(m=>m[1]),['moments','books','keepsakes','future','notes']);
 for(const name of ['index.html','app.js','bucket-list.mjs','bucket-list.css']){
  const source=readFileSync(new URL(`./dist/${name}`,import.meta.url),'utf8');
  assert(!/renderHome|renderJourney|renderWorld|#journey|#world|#home|our little world|our journey/i.test(source),`Unpublished feature in ${name}`);
