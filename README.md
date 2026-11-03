@@ -8,7 +8,7 @@ The `.github/workflows/site.yml` workflow checks JavaScript and local assets, pa
 
 In **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. No deployment secret, package installation, or framework build is required. All asset paths are relative so the site works under `/our-little-dhuniya/`.
 
-This deployment is public and contains sample memories. The original media prototype has no private permanent media storage; Our Notes has its own private Supabase access. Keep personal photos and credentials out of this repository until private storage and access are implemented.
+This deployment is public and contains sample memories. The original media prototype has no private permanent media storage; Our Notes is an openly readable/editable Supabase-backed page. Keep personal photos and credentials out of this repository until private storage and access are implemented.
 
 ## Bucket list
 
@@ -20,9 +20,9 @@ The published navigation is Little Moments, Memory Books, Keepsakes, Our Bucket 
 
 Our Notes is an expanding plain-text writing page inside the same website, with only Undo and Redo as writing controls. Every input event immediately writes a Yjs update to IndexedDB and starts a Supabase insert. There is no debounce, manual Save button, or Edit mode. Whitespace and line breaks are preserved. Supabase Realtime exchanges updates; Yjs merges simultaneous edits and scopes undo to the current writer.
 
-Open the private `#notes/<invite>` link once per browser/device. It automatically creates a device session and joins the private page. There is no email/password form. After pairing, the regular Our Notes tab works on that device. Anyone holding the link can join; share it privately. The link is not in GitHub or the deployed files. Its local recovery copy is in the ignored `.env.notes-invite` file in the release checkout. Clearing site data requires opening the private link again.
+Open `#notes` directly or choose **Our Notes** from the normal site menu. No login, pairing, account, or private link is required. At the owner's explicit request, anyone who can open the site can read and edit the shared notes. Existing saved text is retained. Old private URLs still open the same notes, but their access token is no longer needed.
 
-The live project uses `supabase/notes.sql` and `supabase/private-link.sql`. Only approved members can read and append updates. The public publishable key in `dist/notes-config.mjs` is intentional; it cannot grant access to notes without the private link/membership. No database password or service-role key is used by the site. Invite hashes live in an unexposed private schema. Previously created password accounts are not required by the page.
+The live project applies `supabase/notes.sql` followed by `supabase/public-notes.sql`. RLS remains enabled; visitors receive only read/append access to the notes update log. Account membership tables retain their original restrictions. `supabase/private-link.sql` and `verify-notes.sql` document the previous private setup and are not required by the public page. The public publishable key in `dist/notes-config.mjs` is intentional. Database passwords and service-role keys are never shipped to the site.
 
 Offline edits are stored in IndexedDB and merged back on reconnection or reopening. The status says saved only after the shared database acknowledges writes. Browser/network failures cannot guarantee immediate remote delivery. Keep an offline device's site data until it has synced. A failed initial connection is retried; the editor waits for initial synchronization before accepting input.
 

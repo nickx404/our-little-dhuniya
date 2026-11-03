@@ -87,13 +87,9 @@ export function initNotes({escape:e,config,refresh}) {
   if(channel)client.removeChannel(channel);channel=null;
   if(persistence)await persistence.destroy();persistence=null;
   doc?.destroy();doc=null;text=null;undo=null;session=nextSession;
-  if(!session){phase='locked';message='Open the private link on this device to join our page.';refresh();return;}
   phase='loading';refresh();
-  const {data,error}=await client.from('notes_members').select('user_id').eq('user_id',session.user.id).maybeSingle();
-  if(token!==generation)return;
-  if(error||!data){phase='denied';message='This device could not open our page. Please reopen the private link.';refresh();return;}
   doc=new Y.Doc();text=doc.getText('our-words');
-  persistence=new IndexeddbPersistence(`for-us-notes-${config.url}-${session.user.id}`,doc);
+  persistence=new IndexeddbPersistence(`for-us-notes-${config.url}-${session?.user.id||'public'}`,doc);
   try {await persistence.whenSynced;}catch{status('Local recovery is unavailable. Keep this page online while writing.');}
   if(token!==generation)return;
   undo=new Y.UndoManager(text,{trackedOrigins:new Set([typingOrigin])});
@@ -111,32 +107,12 @@ export function initNotes({escape:e,config,refresh}) {
     else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(result)){failed=true;status('Connection interrupted · keeping your words here while reconnecting.');}
    });
  }
- const linkStorage=`for-us-private-notes-link-${config.url}`;
- let accessKey='';
- try {
-  accessKey=location.hash.match(/^#notes\/([A-Za-z0-9_-]{43})$/)?.[1]||localStorage.getItem(linkStorage)||'';
-  if(accessKey)localStorage.setItem(linkStorage,accessKey);
- }catch{accessKey=location.hash.match(/^#notes\/([A-Za-z0-9_-]{43})$/)?.[1]||'';}
- async function openPrivatePage() {
-  if(!client)return;
-  if(!accessKey){phase='locked';message='Open the private link on this device once. After that, Our Notes is ready whenever you come back.';refresh();return;}
-  try {
-   let {data:{session:current},error}=await client.auth.getSession();
-   if(error)throw error;
-   if(!current){const result=await client.auth.signInAnonymously();if(result.error)throw result.error;current=result.data.session;}
-   const result=await client.rpc('join_notes',{invite:accessKey});
-   if(result.error)throw result.error;
-   await connect(current);
-  }catch{phase='locked';message='Our private page could not connect. Check the connection and reopen your private link.';refresh();}
- }
- if(client)setTimeout(openPrivatePage,0);
- window.addEventListener('hashchange',()=>{
-  const supplied=location.hash.match(/^#notes\/([A-Za-z0-9_-]{43})$/)?.[1];
-  if(supplied && (supplied!==accessKey||phase==='locked')){
-   accessKey=supplied;try{localStorage.setItem(linkStorage,supplied);}catch{}
-   phase='loading';refresh();openPrivatePage();
-  }
- });
+ if(client)setTimeout(async()=>{
+  let previousSession=null;
+  try{previousSession=(await client.auth.getSession()).data.session;}catch{}
+  // Retain the existing device's recovery store; new visitors need no account or key.
+  await connect(previousSession);
+ },0);
  document.addEventListener('input',event=>{
   if(event.target.id==='shared-writing'&&text){applyText(doc,text,event.target.value);resize();}
  });
@@ -162,8 +138,7 @@ export function initNotes({escape:e,config,refresh}) {
  function render() {
   if(phase==='setup')return '<section class="notes-gate"><p class="handwritten">our words need a little home.</p><h2>Our shared page is being connected.</h2><p>Once it is ready, your words will follow you between devices.</p></section>';
   if(phase==='loading')return '<section class="notes-gate" aria-busy="true"><div class="notes-loading"></div><p>Opening our little page…</p></section>';
-  if(phase==='locked'||phase==='denied')return `<section class="notes-gate"><span class="handwritten">a little space, just for us.</span><h2>Our words belong here.</h2><p>${e(message)}</p></section>`;
-  return `<section class="writing-page" aria-label="Our shared writing page"><div class="writing-toolbar"><div role="group" aria-label="Writing history"><button data-notes-undo ${undo?.undoStack.length?'':'disabled'}>↶ undo</button><button data-notes-redo ${undo?.redoStack.length?'':'disabled'}>↷ redo</button></div><span id="notes-status" role="status" aria-live="polite">${e(message)}</span></div><label class="visually-hidden" for="shared-writing">Our words, automatically saved</label><textarea id="shared-writing" class="writing-paper" spellcheck="true" wrap="soft" placeholder="just start typing. I’m right here." ${editorReady?'':'disabled'}>${e(text?.toString()||'')}</textarea><div class="writing-footnote"><span>every word. every little space. kept for us.</span></div></section>`;
+  return `<section class="writing-page" aria-label="Our shared writing page"><div class="writing-toolbar"><div role="group" aria-label="Writing history"><button data-notes-undo ${undo?.undoStack.length?'':'disabled'}>↶ undo</button><button data-notes-redo ${undo?.redoStack.length?'':'disabled'}>↷ redo</button></div><span id="notes-status" role="status" aria-live="polite">${e(message)}</span></div><label class="visually-hidden" for="shared-writing">Our words, automatically saved</label><textarea id="shared-writing" class="writing-paper" spellcheck="true" wrap="soft" placeholder="just start typing. I’m right here." ${editorReady?'':'disabled'}>${e(text?.toString()||'')}</textarea><div class="writing-footnote"><span>automatically saved · this page is openly editable.</span></div></section>`;
  }
  return {render,mount(){resize();controls();}};
 }
