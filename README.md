@@ -1,5 +1,7 @@
 # for us
 
+The private Oracle/Telegram backend is documented in [backend/README.md](backend/README.md). GitHub Pages supplies the public demo; Oracle supplies the PIN-protected website and private storage.
+
 A browser-only visual prototype of a couple's personal scrapbook. Open `dist/index.html` through a static HTTP server, for example `python -m http.server 4173 --directory dist`.
 
 ## GitHub Pages deployment
@@ -8,7 +10,7 @@ The `.github/workflows/site.yml` workflow checks JavaScript and local assets, pa
 
 In **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. No deployment secret, package installation, or framework build is required. All asset paths are relative so the site works under `/our-little-dhuniya/`.
 
-This deployment is public and contains sample memories. The original media prototype has no private permanent media storage; Our Notes is an openly readable/editable Supabase-backed page. Keep personal photos and credentials out of this repository until private storage and access are implemented.
+This deployment is public and contains sample memories. The public media prototype has no private permanent media storage. Its notes entry opens the private Oracle website. Keep personal photos and credentials out of this repository until private storage and access are implemented.
 
 ## Bucket list
 
@@ -18,19 +20,11 @@ The published navigation is Little Moments, Memory Books, Keepsakes, Our Bucket 
 
 ## Our Notes
 
-Our Notes is an expanding plain-text writing page inside the same website, with only Undo and Redo as writing controls. Every input event immediately writes a Yjs update to IndexedDB and starts a Supabase insert. There is no debounce, manual Save button, or Edit mode. Whitespace and line breaks are preserved. Supabase Realtime exchanges updates; Yjs merges simultaneous edits and scopes undo to the current writer.
+The private website retains the expanding notepad, Yjs concurrent editing, Undo/Redo and device recovery. It saves updates through the PIN-protected Oracle API. The public demo links to that private website.
 
-Open `#notes` directly or choose **Our Notes** from the normal site menu. No login, pairing, account, or private link is required. At the owner's explicit request, anyone who can open the site can read and edit the shared notes. Existing saved text is retained. Old private URLs still open the same notes, but their access token is no longer needed.
+Before closing anonymous access to the old Supabase table, follow the ordered export/import and verification steps in the backend documentation. Existing updates are preserved.
 
-The live project applies `supabase/notes.sql` followed by `supabase/public-notes.sql`. RLS remains enabled; visitors receive only read/append access to the notes update log. Account membership tables retain their original restrictions. `supabase/private-link.sql` and `verify-notes.sql` document the previous private setup and are not required by the public page. The public publishable key in `dist/notes-config.mjs` is intentional. Database passwords and service-role keys are never shipped to the site.
-
-Offline edits are stored in IndexedDB and merged back on reconnection or reopening. The status says saved only after the shared database acknowledges writes. Browser/network failures cannot guarantee immediate remote delivery. Keep an offline device's site data until it has synced. A failed initial connection is retried; the editor waits for initial synchronization before accepting input.
-
-The append-only update log currently replays on connection, paginated in groups of 500. Add snapshots/compaction if years of updates make startup slow. A single encoded update is capped at 256 KiB; exceptionally large pastes or recovery snapshots show an explicit error rather than discarding text.
-
-The scheduled `notes-health.yml` workflow performs two small database health calls daily, without reading notes. It reduces inactivity risk but does not guarantee the free project will never pause. GitHub may delay schedules or disable schedules on inactive public repositories. Keep Supabase warning emails enabled.
-
-To modify the bundled module: `npm ci --ignore-scripts`, `npm run test:notes`, then `npm run build:notes`. CI performs the same checks and build before Pages deployment. Do not publish Home, Journey, or Little World from the separate local checkout until approved.
+Build the module with `npm ci --ignore-scripts`, `npm run test:notes`, then `npm run build:notes`. The existing published Bucket List and Keepsakes remain present. Newer local Home, Journey and Little World source is excluded from this release.
 
 ## Included
 
@@ -40,7 +34,7 @@ To modify the bundled module: `npm ci --ignore-scripts`, `npm run test:notes`, t
 - Session-only local photo, video, and keepsake previews. Refresh restores sample content. Nothing is uploaded to a server.
 - User-supplied bunny (her) and otter (him) illustrations.
 
-Telegram, private shared storage, accounts, and a manual scrapbook arrangement editor are not connected in this visual stage.
+The separately hosted Oracle backend provides shared media storage through Telegram, metadata and a shared PIN.
 
 ## Assets and licenses
 

@@ -1,0 +1,15 @@
+[Unit]
+Description=Our Little Dhuniya Telegram upload queue
+After=network-online.target dhuniya-telegram.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/srv/dhuniya-telegram/app/backend
+ExecStart=/usr/bin/python3 worker.py
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

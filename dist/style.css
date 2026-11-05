@@ -15,3 +15,14 @@ footer{max-width:1176px;margin:30px auto 0;border-top:1px dashed #d1b7c4;display
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.page-turn{display:none}}
 
 .delete-entry{color:var(--rose,#ac4c70);margin-left:1rem}.viewer-toolbar .delete-entry{margin-left:auto;margin-right:3rem}
+
+.file-tile{display:grid;place-items:center;min-height:220px;padding:25px;background:var(--paper);font:30px 'Patrick Hand';color:var(--ink)}
+.transfer-panel{margin:24px auto;padding:16px;max-width:900px;background:var(--paper);border:1px solid #dbc5c8;font:18px 'Patrick Hand'}
+.transfer-panel button{margin:5px;padding:7px 12px;background:#f9e4ec;border:1px solid #d7b9c5}
+.preserve-lines{white-space:pre-wrap}
+.lock-notice{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#fff5f8f5}
+.lock-notice button{padding:20px;background:var(--paper);color:var(--ink);font:24px 'Patrick Hand'}
+audio{display:block;width:90%;margin:35px auto}
+
+body{overflow-x:clip}
+dialog textarea{width:100%;padding:10px 12px;border:1px solid #d7b9c5;border-radius:4px;background:#fffaf7;font:18px/1.5 'Patrick Hand';color:var(--ink);resize:vertical}

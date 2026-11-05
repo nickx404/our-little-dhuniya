@@ -1,8 +1,10 @@
+import {api,isPrivate,mediaUrl} from './private-client.mjs';
+import {initUploads,loadMemories} from './uploads.mjs';
 import {deleteMemory} from './delete-entry.mjs';
 import {initNotes} from './notes.mjs';
 import {notesConfig} from './notes-config.mjs';
 import {initBucketList} from './bucket-list.mjs';
-const asset = name => `./assets/${name}`;
+const asset = name => (isPrivate()?'/private-assets/assets/':'./assets/')+name;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const flower = (className = '') => `<svg class="${className}" aria-hidden="true"><use href="#flower"/></svg>`;
 const dateLabel = value => new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(`${value}T12:00:00Z`));
@@ -32,6 +34,7 @@ let turning = false;
 let toastTimer;
 let turnTimer;
 const objectUrls = [];
+let uploads;
 const content = document.querySelector('#content');
 const viewer = document.querySelector('#viewer');
 const addDialog = document.querySelector('#add-dialog');
@@ -49,7 +52,7 @@ function photoCard(moment, index) {
  const tilts = [-3,2,-2,4,2,-3];
  return `<article class="photo-card tape ${index%3===1?'lilac':index%3===2?'rose':''}" style="--tilt:${tilts[index%6]}deg">
  <button class="photo-open" data-open="${escape(moment.id)}" aria-label="Open ${escape(moment.caption)}">
- <img src="${escape(moment.src)}" alt="${escape(moment.caption)}" ${index>3?'loading="lazy"':''} width="600" height="700">
+ ${moment.stored&&moment.kind!=='photo'?'<span class="file-tile">'+(moment.kind==='video'?'▷ video':moment.kind==='audio'?'♫ audio':'↧ attachment')+'</span>':'<img data-media-id="'+(moment.stored?escape(moment.id):'')+'" src="'+escape(moment.src)+'" alt="'+escape(moment.caption)+'" loading="lazy" width="600" height="700">'}
  ${moment.kind==='video'?'<span class="play" aria-hidden="true"></span><span class="duration">video</span>':''}</button>
  <div class="photo-caption">${escape(moment.caption)}</div><time class="photo-date" datetime="${moment.date}">${dateLabel(moment.date)}</time>
  ${index===0?'<svg class="card-heart" aria-hidden="true"><use href="#heart"/></svg>':index===3?flower('card-flower'):''}</article>`;
@@ -61,7 +64,7 @@ function booksSection(full = false) {
  return `<section class="${full?'book-list-page':'books-section'}" aria-labelledby="books-title">${full?'<div class="section-intro"><span class="handwritten">some stories need a few more pages</span><h2 id="books-title">Our memory books</h2><p>Little collections of days we want to keep. Pick a cover, open it up, and stay for a while.</p></div>':'<div class="section-heading"><div><h2 id="books-title">Bound up in memories</h2><p class="subtitle">a few chapters of our favourite story</p></div><a href="#books" class="text-button">all our books ↗</a></div>'}<div class="books-grid">${books.map(bookCover).join('')}</div><p class="shelf-note">pick a book. turn a page. stay a little.</p></section>`;
 }
 function keepsakeObject(item) {
- if(item.src) return `<div class="cover-photo"><img src="${escape(item.src)}" alt="${escape(item.caption)}" style="height:auto;max-height:200px;object-fit:contain"></div>`;
+ if(item.src) return `<div class="cover-photo"><img data-media-id="${item.stored?escape(item.id):''}" src="${escape(item.src)}" alt="${escape(item.caption)}" style="height:auto;max-height:200px;object-fit:contain"></div>`;
  if(item.kind==='ticket') return '<div class="ticket"><div><small>ADMIT TWO</small><strong>you + me</strong><em>A LITTLE MOVIE NIGHT</em></div><span class="ticket-stub">09 AUG 2026</span></div>';
  if(item.kind==='flower') return `<div class="pressed-flower">${flower()}</div>`;
  return '<div class="letter-object">saw this &amp;<br>thought of you.<br><small>like I always do.</small></div>';
@@ -106,13 +109,19 @@ function closeViewer() {
  clearTimeout(turnTimer);turning=false;currentBook=null;
  viewer.close();
 }
-function openMoment(id) {
+async function openMoment(id) {
  const m=moments.find(x=>x.id===id); if(!m) return;
- openViewer(`<button class="close-button" data-action="close" aria-label="Close memory">×</button>${m.kind==='video'?`<video controls playsinline preload="metadata" poster="${escape(m.src)}"><source src="${escape(m.video)}">Your browser cannot play this video.</video>`:`<img class="memory-image" src="${escape(m.src)}" alt="${escape(m.caption)}">`}<div class="memory-copy"><time datetime="${m.date}">${dateLabel(m.date)}</time><h2>${escape(m.caption)}</h2><p>${escape(m.story)}</p><button class="text-button" data-link-moment="${m.id}">add to a memory book ↗</button><button class="text-button delete-entry" data-delete="moments" data-id="${m.id}">delete this moment</button></div>`,'photo-viewer');
+ if(m.stored){
+  try {m.url=await mediaUrl(m.id);m.video=m.url;if(m.kind==='photo')m.src=m.url;}
+  catch(error){toast(error.message);return;}
+ }
+ const media=m.kind==='video'?'<video data-media-id="'+escape(m.id)+'" controls playsinline preload="metadata" src="'+escape(m.video)+'"></video>':m.kind==='audio'?'<audio data-media-id="'+escape(m.id)+'" controls preload="metadata" src="'+escape(m.url)+'"></audio>':m.kind==='attachment'?'<p class="file-tile">A little file we kept.</p>':'<img data-media-id="'+escape(m.id)+'" class="memory-image" src="'+escape(m.src)+'" alt="'+escape(m.caption)+'">';
+ openViewer('<button class="close-button" data-action="close" aria-label="Close memory">×</button>'+media+'<div class="memory-copy"><time>'+dateLabel(m.date)+'</time><h2>'+escape(m.caption)+'</h2><p class="preserve-lines">'+escape(m.story)+'</p>'+(m.stored?'<p>'+m.tags.map(tag=>'#'+escape(tag)).join(' ')+'</p><a class="text-button" href="'+escape(m.url)+'&download=1">download original ↧</a><button class="text-button" data-edit-memory="'+m.id+'">edit details</button>':'')+'<button class="text-button" data-link-moment="'+m.id+'">add to a memory book ↗</button><button class="text-button delete-entry" data-delete="moments" data-id="'+m.id+'">delete this moment</button></div>','photo-viewer');
 }
-function openKeepsake(id) {
+async function openKeepsake(id) {
  const item=keepsakes.find(x=>x.id===id);if(!item)return;
- openViewer(`<button class="close-button" data-action="close" aria-label="Close keepsake">×</button><div class="viewer-keepsake">${keepsakeObject(item)}</div><div class="memory-copy"><time datetime="${item.date}">${dateLabel(item.date)}</time><h2>${escape(item.caption)}</h2><p>${escape(item.story)}</p><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button><button class="text-button delete-entry" data-delete="keepsakes" data-id="${item.id}">delete this keepsake</button></div>`,'photo-viewer');
+ if(item.stored){try{item.src=await mediaUrl(item.id);}catch(error){toast(error.message);return;}}
+ openViewer(`<button class="close-button" data-action="close" aria-label="Close keepsake">×</button><div class="viewer-keepsake">${keepsakeObject(item)}</div><div class="memory-copy"><time datetime="${item.date}">${dateLabel(item.date)}</time><h2>${escape(item.caption)}</h2><p class="preserve-lines">${escape(item.story)}</p>${item.stored?'<p>'+item.tags.map(tag=>'#'+escape(tag)).join(' ')+'</p><a class="text-button" href="'+escape(item.src)+'&download=1">download original ↧</a><button class="text-button" data-edit-memory="'+item.id+'">edit details</button>':''}<button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button><button class="text-button delete-entry" data-delete="keepsakes" data-id="${item.id}">delete this keepsake</button></div>`,'photo-viewer');
 }
 function bookPages(book) {
  const first=moments.find(m=>m.id===book.ids[0]);
@@ -126,7 +135,7 @@ function pageMarkup(page,index,extra='') {
  let body='';
  if(page.type==='intro'||page.type==='photo') {
   const m=page.moment;
-  body=`${page.type==='intro'?`<p class="page-note">${escape(currentBook.title)}</p>`:''}<figure class="page-polaroid tape"><button class="photo-open" data-book-media="${m.id}" aria-label="${m.kind==='video'?'Play video':'View photo'}: ${escape(m.caption)}"><img src="${escape(m.src)}" alt="${escape(m.caption)}">${m.kind==='video'?'<span class="play" aria-hidden="true"></span>':''}</button><figcaption>${escape(m.caption)}</figcaption></figure><p class="page-note">${dateLabel(m.date)}</p>${flower('page-decoration')}`;
+  body=`${page.type==='intro'?`<p class="page-note">${escape(currentBook.title)}</p>`:''}<figure class="page-polaroid tape"><button class="photo-open" data-book-media="${m.id}" aria-label="${m.kind==='video'?'Play video':'View photo'}: ${escape(m.caption)}">${m.stored&&m.kind!=='photo'?'<span class="file-tile">'+escape(m.kind)+'</span>':'<img src="'+escape(m.src)+'" alt="'+escape(m.caption)+'">'}${m.kind==='video'?'<span class="play" aria-hidden="true"></span>':''}</button><figcaption>${escape(m.caption)}</figcaption></figure><p class="page-note">${dateLabel(m.date)}</p>${flower('page-decoration')}`;
  } else if(page.type==='letter') body=`<span class="handwritten">a little note for you</span><div class="page-letter">${escape(page.text)}<span class="sign-off">with you, always. ♡</span></div><div class="page-friends"><img src="${asset('otter-pixel.png')}" alt="Your otter"><img src="${asset('bunny-pixel.png')}" alt="Her bunny"></div>`;
  else if(page.type==='keepsake')body=`<span class="handwritten">a little thing we kept</span><div class="page-keepsake">${keepsakeObject(page.item)}</div><p class="page-note">${escape(page.item.caption)}</p>`;
  else body=`<div class="ending-page"><svg aria-hidden="true"><use href="#heart"/></svg><p>More pages.<br>More us.</p><span>to be continued, together.</span></div>`;
@@ -164,12 +173,18 @@ function chooseBook(id,kind) {
 }
 function updateUploadHint() {
  const keepsake=addDialog.querySelector('[name="kind"]').value==='keepsake';
- addDialog.querySelector('[name="file"]').accept=keepsake?'image/*':'image/*,video/*';
+ addDialog.querySelector('[name="file"]').accept=keepsake?'image/*':(isPrivate()?'*/*':'image/*,video/*');
  document.querySelector('#file-prompt').textContent=keepsake?'Choose a photo or scan of your keepsake':'Choose a photo or video';
  document.querySelector('#upload-help').textContent=keepsake?'Photograph or scan a ticket, note, or object. Transparent PNG cutouts keep their clear background; other images keep their background. This preview does not remove backgrounds.':'';
 }
 addDialog.querySelector('[name="kind"]').addEventListener('change',updateUploadHint);
 function showAdd(keepsake=false) {
+ if(!isPrivate()){location.href=notesConfig.privateSite+(keepsake?'#keepsakes':'#moments');return;}
+ delete addDialog.dataset.edit;
+ addDialog.querySelector('[name="kind"]').disabled=false;
+ addDialog.querySelector('[type="submit"]').textContent='keep this moment ♡';
+ addDialog.querySelector('[name="file"]').required=true;
+ addDialog.querySelector('[name="file"]').disabled=false;
  addDialog.querySelector('form').reset();
  addDialog.querySelector('[name="kind"]').value=keepsake?'keepsake':'photo';
  addDialog.querySelector('[name="date"]').value=new Intl.DateTimeFormat('en-CA').format(new Date());
@@ -177,9 +192,41 @@ function showAdd(keepsake=false) {
  updateUploadHint();
  addDialog.showModal();
 }
-document.addEventListener('click',event=>{
+document.addEventListener('click',async event=>{
  const target=event.target.closest('button,a');if(!target)return;
+ if(target.dataset.editMemory){
+  const item=[...moments,...keepsakes].find(item=>item.id===target.dataset.editMemory);if(!item)return;
+  showAdd();addDialog.dataset.edit=item.id;
+  addDialog.querySelector('[name="kind"]').disabled=true;
+  addDialog.querySelector('[type="submit"]').textContent='save our changes ♡';
+  for(const [name,value] of Object.entries({title:item.title,caption:item.description,date:item.day,tags:item.tags.join(', ')}))addDialog.querySelector('[name="'+name+'"]').value=value;
+  addDialog.querySelector('[name="file"]').required=false;
+  addDialog.querySelector('[name="file"]').disabled=true;
+  return;
+ }
+ if(target.dataset.delete==='books'&&isPrivate()){
+  const book=books.find(book=>book.id===target.dataset.id);if(!book)return;
+  if(!window.confirm('Remove this book? Its photos and keepsakes will stay in the scrapbook.'))return;
+  try{
+   const remote=await api('/api/documents/book-state');
+   await api('/api/documents/book-state',{method:'PUT',json:{version:remote.version,value:{deleted:[...new Set([...(remote.value?.deleted||[]),book.id])]}}});
+   books.splice(books.indexOf(book),1);closeViewer();render();toast('Book removed. Its memories are still here.');
+  }catch(error){toast(error.message);}
+  return;
+ }
  if(target.dataset.delete){
+  const item=[...moments,...keepsakes].find(item=>item.id===target.dataset.id);
+  if(item?.stored){
+   if(!window.confirm('Remove this memory from our scrapbook and books? The Telegram files stay available for recovery.'))return;
+   try{
+    await api('/api/items/'+item.id,{method:'DELETE'});
+    const collection=item.collection==='keepsakes'?keepsakes:moments;
+    collection.splice(collection.indexOf(item),1);
+    for(const book of books){book.ids=book.ids.filter(id=>id!==item.id);book.keepsakeIds=book.keepsakeIds.filter(id=>id!==item.id);}
+    closeViewer();render();toast('Removed from our scrapbook.');
+   }catch(error){toast(error.message);}
+   return;
+  }
   if(!deleteMemory({moments,keepsakes,books},target.dataset.delete,target.dataset.id,message=>window.confirm(message)))return;
   closeViewer();render();toast('Entry deleted from this preview.');return;
  }
@@ -192,14 +239,25 @@ document.addEventListener('click',event=>{
  if(target.dataset.linkMoment){chooseBook(target.dataset.linkMoment,'moment');return;}
  if(target.dataset.bookMedia){
   const m=moments.find(x=>x.id===target.dataset.bookMedia);
-  if(m?.kind==='video'){
-   const video=document.createElement('video');video.controls=true;video.playsInline=true;video.src=m.video;video.poster=m.src;video.style.height='210px';
+  if(m?.stored){
+   try{m.video=await mediaUrl(m.id);m.url=m.video;}catch(error){toast(error.message);return;}
+  }
+  if(m?.kind==='attachment'){
+   const link=document.createElement('a');link.href=m.url+'&download=1';link.textContent='download '+m.name;link.className='text-button';target.replaceWith(link);return;
+  }
+  if(m?.kind==='video'||m?.kind==='audio'){
+   const video=document.createElement(m.kind==='audio'?'audio':'video');video.controls=true;video.playsInline=true;video.src=m.video;video.poster=m.src;video.style.height='210px';
    target.replaceWith(video);video.play().catch(()=>toast('Tap play to start this video.'));
   }else toast('A little moment, kept right here.');
   return;
  }
  if(target.dataset.attach){
   const book=books.find(b=>b.id===target.dataset.attach);const ids=target.dataset.kind==='keepsake'?book.keepsakeIds:book.ids;
+  if(isPrivate()){
+   try{
+    await api('/api/books/'+book.id,{method:'PUT',json:{add:target.dataset.item}});
+   }catch(error){toast(error.message);return;}
+  }
   if(!ids.includes(target.dataset.item))ids.push(target.dataset.item);
   closeViewer();render();toast(`Tucked into “${book.title}”. Saved in this preview tab.`);return;
  }
@@ -207,10 +265,22 @@ document.addEventListener('click',event=>{
  if(action==='close'){if(target.closest('dialog')===viewer)closeViewer();else target.closest('dialog')?.close();}
  if(action==='add'&&currentSection==='future')bucketList.add();
  else if(action==='add'||action==='add-keepsake')showAdd(action==='add-keepsake');
- if(action==='about')openViewer('<button class="close-button" data-action="close" aria-label="Close">×</button><div class="about-copy"><span class="handwritten">a little space, just for us</span><h2>Every little thing belongs.</h2><p>This is our first visual prototype. The photographs, dates, and stories are sample content. The bunny is her; the otter is you.</p><p>You can explore books, turn pages, and try your own photos or keepsakes. Additions and book placements stay in this tab until you refresh. Bucket-list wishes and checkmarks are saved in this browser only. They do not sync between devices. Telegram, accounts, and shared storage will come later.</p><p>Photo samples: Unsplash. Video sample: MDN’s CC0 flower clip. Fonts: Mali and Patrick Hand (SIL Open Font License); Special Elite (Apache 2.0).</p></div>','photo-viewer');
+ if(action==='about')openViewer('<button class="close-button" data-action="close" aria-label="Close">×</button><div class="about-copy"><span class="handwritten">a little space, just for us</span><h2>Every little thing belongs.</h2><p>This is our first visual prototype. The photographs, dates, and stories are sample content. The bunny is her; the otter is you.</p><p>You can explore books, turn pages, and try your own photos or keepsakes. Additions and book placements stay in this tab until you refresh. Bucket-list wishes and checkmarks are saved in this browser only. They do not sync between devices. The private website saves uploaded media through Telegram and keeps their details on Oracle.</p><p>Photo samples: Unsplash. Video sample: MDN’s CC0 flower clip. Fonts: Mali and Patrick Hand (SIL Open Font License); Special Elite (Apache 2.0).</p></div>','photo-viewer');
 });
-document.querySelector('#add-form').addEventListener('submit',event=>{
+document.querySelector('#add-form').addEventListener('submit',async event=>{
  event.preventDefault();const data=new FormData(event.currentTarget);const file=data.get('file');const kind=data.get('kind');
+ if(isPrivate()){
+  const values={collection:data.get('kind')==='keepsake'?'keepsakes':'moments',title:String(data.get('title')||''),caption:String(data.get('caption')||''),day:String(data.get('date')),tags:String(data.get('tags')||'').split(',').map(tag=>tag.trim()).filter(Boolean)};
+  if(addDialog.dataset.edit){
+   try{await api('/api/items/'+addDialog.dataset.edit,{method:'PATCH',json:values});await refreshMemories();addDialog.close();closeViewer();toast('Details saved.');}
+   catch(error){toast(error.message);}
+   return;
+  }
+  if(!(file instanceof File)||!file.size){toast('Choose a nonempty file.');return;}
+  addDialog.close();
+  uploads.begin(file,values).catch(error=>toast(error.message));
+  return;
+ }
  if(!(file instanceof File)||!file.size)return;
  if(!file.type.startsWith('image/')&&!file.type.startsWith('video/')){toast('Choose an image or video file.');return;}
  if(kind==='keepsake'&&file.type.startsWith('video/')){toast('Choose an image for a keepsake, or select “A video”.');return;}
@@ -237,7 +307,53 @@ viewer.addEventListener('touchend',event=>{if(!currentBook||event.target.closest
 window.matchMedia('(max-width:760px)').addEventListener('change',()=>{if(currentBook&&!turning)renderReader();});
 window.addEventListener('hashchange',render);
 window.addEventListener('beforeunload',()=>objectUrls.forEach(url=>URL.revokeObjectURL(url)));
-document.addEventListener('error',event=>{if(event.target instanceof HTMLImageElement){event.target.classList.add('image-error');event.target.alt='This photograph could not load.';}},true);
+document.addEventListener('error',async event=>{
+ const element=event.target;
+ if(isPrivate()&&element.dataset?.mediaId&&!element.dataset.retried){
+  element.dataset.retried='1';
+  try{
+   const time=element instanceof HTMLMediaElement?element.currentTime:0;
+   element.src=await mediaUrl(element.dataset.mediaId);
+   if(time)element.addEventListener('loadedmetadata',()=>{element.currentTime=time;},{once:true});
+   return;
+  }catch{}
+ }
+ if(element instanceof HTMLImageElement){element.classList.add('image-error');element.alt='This photograph could not load. Open the memory to download the original.';}
+},true);
+document.addEventListener('load',event=>{if(event.target.dataset?.retried)delete event.target.dataset.retried;},true);
+document.addEventListener('loadedmetadata',event=>{if(event.target.dataset?.retried)delete event.target.dataset.retried;},true);
 const notes=initNotes({escape,config:notesConfig,refresh:()=>{if(currentSection==='notes')render();}});
 const bucketList=initBucketList({escape,render,toast});
 render();
+
+async function refreshMemories(){
+ const shared=await loadMemories();
+ for(let i=moments.length-1;i>=0;i--)if(moments[i].stored)moments.splice(i,1);
+ for(let i=keepsakes.length-1;i>=0;i--)if(keepsakes[i].stored)keepsakes.splice(i,1);
+ moments.unshift(...shared.filter(item=>item.collection!=='keepsakes'));
+ keepsakes.unshift(...shared.filter(item=>item.collection==='keepsakes'));
+ const bookState=await api('/api/documents/book-state');
+ for(let i=books.length-1;i>=0;i--)if(bookState.value?.deleted?.includes(books[i].id))books.splice(i,1);
+ for(const book of books){
+  const saved=(await api('/api/books/'+book.id)).ids;
+  book.keepsakeIds=[...new Set([...book.keepsakeIds.filter(id=>keepsakes.some(item=>item.id===id)),...saved.filter(id=>keepsakes.some(item=>item.id===id))])];
+  book.ids=[...new Set([...book.ids.filter(id=>moments.some(item=>item.id===id)),...saved.filter(id=>moments.some(item=>item.id===id))])];
+ }
+ render();
+}
+let initialMemories=Promise.resolve();
+if(isPrivate()){
+ uploads=initUploads({escape,toast,saved:refreshMemories});
+ initialMemories=refreshMemories().catch(error=>toast(error.message));
+ const lockButton=document.createElement('button');
+ lockButton.textContent='lock our scrapbook';lockButton.className='text-button';
+ lockButton.addEventListener('click',()=>location.reload());
+ document.querySelector('footer').append(lockButton);
+ window.addEventListener('scrapbook-locked',()=>{
+  const notice=document.createElement('div');notice.className='lock-notice';
+  const button=document.createElement('button');button.textContent='Unlock our scrapbook again';button.addEventListener('click',()=>location.reload());
+  notice.append(button);document.body.append(notice);
+ });
+}
+
+export const scrapbookReady=Promise.all([initialMemories,notes.ready]);

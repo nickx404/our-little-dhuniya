@@ -1,0 +1,9 @@
+[Unit]
+Description=Back up scrapbook metadata and note updates
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/srv/dhuniya-telegram/app/backend
+ExecStart=/usr/bin/python3 maintenance.py
+UMask=0077

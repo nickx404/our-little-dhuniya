@@ -1,0 +1,18 @@
+{
+    log default {
+        format filter {
+            wrap json
+            fields {
+                request>uri delete
+                request>headers>Authorization delete
+                uri delete
+            }
+        }
+    }
+}
+
+our-little-dhuniya.duckdns.org {
+    # Access logging is intentionally disabled so signed media links stay private.
+    reverse_proxy 127.0.0.1:4178
+    header Referrer-Policy "no-referrer"
+}

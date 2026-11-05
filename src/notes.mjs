@@ -1,10 +1,13 @@
-import {createClient} from '@supabase/supabase-js';
+import {api,isPrivate} from './private-client.mjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import {Y,typingOrigin,remoteOrigin,applyText,encode,decode} from './notes-model.mjs';
 
 export function initNotes({escape:e,config,refresh}) {
- const client=config.url && config.publishableKey ? createClient(config.url,config.publishableKey) : null;
+ const client=isPrivate();
+ let finishOpening;
+ const ready=client?new Promise(resolve=>{finishOpening=resolve;}):Promise.resolve();
  let phase=client?'loading':'setup', message='', session=null, doc=null, text=null, undo=null, persistence=null, channel=null;
+ let lastSeq=0;
  let generation=0, composing=false, deferred=[], retryTimer, busy=0, failed=false, catchingUp=false, editorReady=false;
  const editor=()=>document.querySelector('#shared-writing');
  const state=()=>document.querySelector('#notes-status');
@@ -46,8 +49,7 @@ export function initNotes({escape:e,config,refresh}) {
   if(payload.length>262144){failed=true;status('This page is too large to sync. Keep it open and copy your words before leaving.');return;}
   busy++;status(navigator.onLine?'Saving…':'Offline · your words are waiting on this device.');
   try {
-   const {error}=await client.from('notes_updates').insert({id:crypto.randomUUID(),payload});
-   if(error)throw error;
+   await api('/api/notes', {method:'POST', json:{id:crypto.randomUUID(),payload}});
    if(token!==generation)return;
    if(recovery)failed=false;
   }catch {
@@ -66,25 +68,25 @@ export function initNotes({escape:e,config,refresh}) {
   catchingUp=true;status('Bringing our words together…');
   try {
    // shortcut: the update log is replayed on connection; add snapshots if long-term replay becomes slow.
-   let cursor=0;
+   const initial=!editorReady;
+   let cursor=lastSeq;
    while(token===generation){
-    const {data,error}=await client.from('notes_updates').select('seq,payload').gt('seq',cursor).order('seq').limit(500);
-    if(error)throw error;
+    const data=await api('/api/notes?after='+cursor);
     for(const row of data){if(token!==generation)return;receive(row.payload);cursor=row.seq;}
     if(data.length<500)break;
    }
    if(token!==generation)return;
-   editorReady=true;refresh();
+   lastSeq=cursor;editorReady=true;if(initial)refresh();
    // A full CRDT update also recovers edits made offline in an earlier session.
-   await send(Y.encodeStateAsUpdate(doc),true);
+   if(initial)await send(Y.encodeStateAsUpdate(doc),true);
   }catch {
    if(token===generation){failed=true;status('Could not reach our shared page. Keeping your words here and retrying.');scheduleRetry();}
-  }finally {if(token===generation){catchingUp=false;if(!busy&&!failed)status('Saved for both of us.');}}
+  }finally {if(token===generation){finishOpening?.();catchingUp=false;if(!busy&&!failed)status('Saved for both of us.');}}
  }
  async function connect(nextSession) {
   const token=++generation;
   clearTimeout(retryTimer);busy=0;failed=false;catchingUp=false;editorReady=false;deferred=[];composing=false;
-  if(channel)client.removeChannel(channel);channel=null;
+  if(channel)clearInterval(channel);channel=null;lastSeq=0;
   if(persistence)await persistence.destroy();persistence=null;
   doc?.destroy();doc=null;text=null;undo=null;session=nextSession;
   phase='loading';refresh();
@@ -100,19 +102,10 @@ export function initNotes({escape:e,config,refresh}) {
    if(origin!==remoteOrigin)send(update);
   });
   status('Connecting our page…');refresh();
-  channel=client.channel(`our-words-${crypto.randomUUID()}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'notes_updates'},event=>receive(event.new.payload))
-   .subscribe(result=>{
-    if(token!==generation)return;
-    if(result==='SUBSCRIBED')catchUp(token);
-    else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(result)){failed=true;status('Connection interrupted · keeping your words here while reconnecting.');}
-   });
+  await catchUp(token);
+  channel=setInterval(()=>catchUp(token),2000);
  }
- if(client)setTimeout(async()=>{
-  let previousSession=null;
-  try{previousSession=(await client.auth.getSession()).data.session;}catch{}
-  // Retain the existing device's recovery store; new visitors need no account or key.
-  await connect(previousSession);
- },0);
+ if(client)setTimeout(()=>connect(null),0);
  document.addEventListener('input',event=>{
   if(event.target.id==='shared-writing'&&text){applyText(doc,text,event.target.value);resize();}
  });
@@ -136,9 +129,9 @@ export function initNotes({escape:e,config,refresh}) {
  window.addEventListener('online',()=>{if(phase==='ready'){catchUp(generation);send(Y.encodeStateAsUpdate(doc),true);}});
  window.addEventListener('resize',resize);
  function render() {
-  if(phase==='setup')return '<section class="notes-gate"><p class="handwritten">our words need a little home.</p><h2>Our shared page is being connected.</h2><p>Once it is ready, your words will follow you between devices.</p></section>';
+  if(phase==='setup')return '<section class="notes-gate"><h2>Our words have a private home.</h2><p><a href="'+e(config.privateSite)+'#notes">Open our private scrapbook</a> and enter our passcode.</p></section>';
   if(phase==='loading')return '<section class="notes-gate" aria-busy="true"><div class="notes-loading"></div><p>Opening our little page…</p></section>';
-  return `<section class="writing-page" aria-label="Our shared writing page"><div class="writing-toolbar"><div role="group" aria-label="Writing history"><button data-notes-undo ${undo?.undoStack.length?'':'disabled'}>↶ undo</button><button data-notes-redo ${undo?.redoStack.length?'':'disabled'}>↷ redo</button></div><span id="notes-status" role="status" aria-live="polite">${e(message)}</span></div><label class="visually-hidden" for="shared-writing">Our words, automatically saved</label><textarea id="shared-writing" class="writing-paper" spellcheck="true" wrap="soft" placeholder="just start typing. I’m right here." ${editorReady?'':'disabled'}>${e(text?.toString()||'')}</textarea><div class="writing-footnote"><span>automatically saved · this page is openly editable.</span></div></section>`;
+  return `<section class="writing-page" aria-label="Our shared writing page"><div class="writing-toolbar"><div role="group" aria-label="Writing history"><button data-notes-undo ${undo?.undoStack.length?'':'disabled'}>↶ undo</button><button data-notes-redo ${undo?.redoStack.length?'':'disabled'}>↷ redo</button></div><span id="notes-status" role="status" aria-live="polite">${e(message)}</span></div><label class="visually-hidden" for="shared-writing">Our words, automatically saved</label><textarea id="shared-writing" class="writing-paper" spellcheck="true" wrap="soft" placeholder="just start typing. I’m right here." ${editorReady?'':'disabled'}>${e(text?.toString()||'')}</textarea><div class="writing-footnote"><span>automatically saved · just for us.</span></div></section>`;
  }
- return {render,mount(){resize();controls();}};
+ return {ready,render,mount(){resize();controls();}};
 }

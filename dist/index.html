@@ -25,7 +25,7 @@
   <div class="paper-grain" aria-hidden="true"></div>
   <header class="site-header">
     <a href="#moments" class="wordmark" aria-label="For us, home">for us<span class="wordmark-heart">♡</span></a>
-    <nav aria-label="Our collection"><a href="#moments" data-nav="moments" class="active">little moments</a><a href="#books" data-nav="books">memory books</a><a href="#keepsakes" data-nav="keepsakes">keepsakes</a><a href="#future" data-nav="future">our bucket list</a><a href="#notes" data-nav="notes">Our Notes</a></nav>
+    <nav aria-label="Our collection"><a href="#moments" data-nav="moments" class="active">little moments</a><a href="#books" data-nav="books">memory books</a><a href="#keepsakes" data-nav="keepsakes">keepsakes</a><a href="#future" data-nav="future">our bucket list</a><a href="#notes" data-nav="notes">our notes</a></nav>
     <button class="add-button" data-action="add"><span aria-hidden="true">＋</span> add a little something</button>
   </header>
   <main id="main">
@@ -45,12 +45,14 @@
   <dialog id="add-dialog" aria-labelledby="add-title">
     <button class="close-button" data-action="close" aria-label="Close">×</button>
     <span class="handwritten">one more thing to remember</span><h2 id="add-title">Tuck something away.</h2>
-    <p class="dialog-help">Try a photo, video, or keepsake in this preview. It stays in this tab until you refresh.</p>
+    <p class="dialog-help">In our private scrapbook, photos, video, audio, and files are saved for both of us. Keepsakes remain a local preview.</p>
     <form id="add-form">
-      <label>What are we keeping?<select name="kind"><option value="photo">A photograph</option><option value="video">A video</option><option value="keepsake">A little keepsake</option></select></label>
+      <label>What are we keeping?<select name="kind"><option value="photo">A photograph</option><option value="video">A video</option><option value="audio">Audio</option><option value="attachment">Another file</option><option value="keepsake">A little keepsake</option></select></label>
       <label class="file-drop"><span id="file-prompt">Choose a photo or video</span><input type="file" name="file" accept="image/*,video/*" required><span id="file-label">A call screenshot counts, too.</span></label>
       <p class="dialog-help" id="upload-help"></p>
-      <label>A little caption <span>(if you like)</span><input name="caption" maxlength="120" placeholder="what made this moment yours?"></label>
+      <label>A title <span>(if you like)</span><input name="title" maxlength="200" placeholder="a name for this memory"></label>
+      <label>Tags <span>(separate with commas)</span><input name="tags" placeholder="together, holiday"></label>
+      <label>A little caption <span>(if you like)</span><textarea name="caption" maxlength="4000" rows="3" placeholder="what made this moment yours?"></textarea></label>
       <label>The day<input name="date" type="date" required></label>
       <button class="rose-button" type="submit">keep this moment <span aria-hidden="true">♡</span></button>
     </form>

@@ -1,0 +1,18 @@
+[Unit]
+Description=Our Little Dhuniya private scrapbook
+After=network-online.target dhuniya-telegram.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/srv/dhuniya-telegram/app/backend
+Environment=DHUNIYA_SITE=/srv/dhuniya-telegram/app/dist
+EnvironmentFile=/srv/dhuniya-telegram/site.env
+ExecStart=/usr/bin/gunicorn --bind 127.0.0.1:4178 --workers 1 --threads 8 --timeout 3600 --error-logfile - archive:app
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

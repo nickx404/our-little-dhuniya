@@ -1,4 +1,4 @@
-name: Check shared writing database
+name: Check private scrapbook availability
 
 on:
   schedule:
@@ -18,14 +18,13 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      - name: Check the database without reading private words
+      - name: Check the private API without reading private words
         run: |
           node --input-type=module <<'JS'
           import {notesConfig} from './dist/notes-config.mjs';
-          const response=await fetch(`${notesConfig.url}/rest/v1/rpc/notes_health`,{
-            method:'POST',headers:{apikey:notesConfig.publishableKey,'Content-Type':'application/json'},body:'{}',
+          const response=await fetch(new URL('api/health',notesConfig.privateSite),{
             signal:AbortSignal.timeout(30000)
           });
-          if(!response.ok || await response.json()!==true)throw Error(`Database health check failed (${response.status})`);
-          console.log('Shared writing database responded. No private notes were read.');
+          if(!response.ok || (await response.json()).ok!==true)throw Error(`Private API health check failed (${response.status})`);
+          console.log('Private API responded. No private notes were read.');
           JS

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Our Little Dhuniya · The little lock</title>
+<style id="lock-style">
+@font-face{font-family:Patrick;src:url("{{ url_for('art', name='patrick-0.ttf') }}") format("truetype");font-display:swap}
+:root{color-scheme:light;color:#4c3040;font:1rem system-ui;background:#f9e5eb}
+*{box-sizing:border-box}
+body{min-height:100svh;margin:0;display:grid;place-items:center;padding:2rem 1.2rem;
+  background:radial-gradient(circle,#b95e7726 1.2px,transparent 1.7px) 0 0/19px 19px,radial-gradient(ellipse at top,#fff8df,#f6dbe6 75%)}
+.cover{position:relative;width:min(100%,25rem);padding:1.25rem clamp(1rem,5vw,2.6rem) 1.4rem;text-align:center;
+  background:#fffaf0;border:1px solid #d6a7a5;border-radius:.65rem 1.5rem 1.5rem .65rem;
+  box-shadow:inset 8px 0 #f6d9d8,5px 6px 0 #e9b9c4,0 18px 45px #72354d30;animation:arrive .55s ease both}
+.cover::before{content:"";position:absolute;top:-.56rem;left:calc(50% - 2.3rem);width:4.6rem;height:1.1rem;transform:rotate(-6deg);
+  background:repeating-linear-gradient(45deg,#f0ba73c4 0 5px,#f7d79ecc 5px 9px)}
+.label{margin:.4rem 0 0;font-size:.68rem;font-weight:750;letter-spacing:.17em;text-transform:uppercase;color:#835268}
+h1{font:2.4rem/.97 Patrick,cursive;margin:.35rem 0 .55rem}
+.scene{display:flex;align-items:center;justify-content:center;gap:1rem;height:5.5rem}
+.scene img{width:4.25rem;height:4.25rem;object-fit:contain;image-rendering:pixelated;animation:bob 3s ease-in-out infinite}
+.scene img:last-child{animation-delay:-1.5s}
+.padlock{position:relative;margin-top:1.1rem;background:#a34865;border:2px solid #773349;border-radius:.7rem;
+  width:2.8rem;height:2.35rem;color:#fff7e9;display:grid;place-items:center;font-size:1.2rem;box-shadow:0 3px #773349}
+.padlock::before{content:"";position:absolute;top:-1.24rem;left:.52rem;width:1.48rem;height:1.24rem;border:3px solid #773349;border-bottom:0;border-radius:1rem 1rem 0 0}
+.prompt{margin:0 0 .55rem;font:1.2rem Patrick,cursive}
+input{display:block;width:100%;text-align:center;height:2.65rem;border:1px solid #ad7185;border-radius:.6rem;
+  background:#fff;color:#4c3040;font:1.3rem system-ui;letter-spacing:.45em;padding-left:.45em}
+button{font:inherit;cursor:pointer;color:#572e44}
+button:focus-visible,input:focus-visible{outline:3px solid #753553;outline-offset:3px}
+.keypad{margin:.65rem 0;display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem}
+.keypad[hidden]{display:none}
+.keypad button{min-height:2.75rem;border:1px solid #ddb0bb;background:#fcebf0;border-radius:.55rem;box-shadow:0 2px #eac2cc}
+.keypad button:hover{background:#f5d9e4}
+.keypad button:active{transform:translateY(2px);box-shadow:none}
+.keypad small{font-size:.7rem}
+.submit{width:100%;min-height:2.75rem;margin-top:.2rem;border:0;border-radius:.6rem;background:#813650;color:#fff9f1;font-weight:650}
+.submit:hover{background:#68263e}
+.error{margin:.55rem 0;color:#8b2445;font-size:.84rem}
+.footnote{margin:.75rem 0 0;font:1rem Patrick,cursive;color:#835268}
+@keyframes arrive{from{opacity:0;transform:translateY(8px) rotate(-1deg)}}
+@keyframes bob{50%{transform:translateY(-4px) rotate(4deg)}}
+@media(prefers-reduced-motion:reduce){*,*::before{animation:none!important}}
+</style>
+</head>
+<body>
+<main class="cover">
+  <p class="label">The little lock</p>
+  <h1>Our Little Dhuniya</h1>
+  <div class="scene" aria-hidden="true">
+    <img alt="" src="{{ url_for('art', name='otter-pixel.png') }}">
+    <span class="padlock">♥</span>
+    <img alt="" src="{{ url_for('art', name='bunny-pixel.png') }}">
+  </div>
+  <form method="post">
+    <p class="prompt"><label for="pin">Enter our four-digit passcode</label></p>
+    <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required aria-describedby="pin-error">
+    <p class="error" id="pin-error" role="alert"></p>
+    <div class="keypad" aria-label="Passcode keypad" role="group" hidden>
+      {% for digit in '123456789' %}<button type="button" data-digit="{{ digit }}">{{ digit }}</button>{% endfor %}
+      <button type="button" data-action="clear"><small>Clear</small></button>
+      <button type="button" data-digit="0">0</button>
+      <button type="button" data-action="erase" aria-label="Delete last digit">⌫</button>
+    </div>
+    <button class="submit">Unlock our scrapbook</button>
+  </form>
+  <p class="footnote">a little world for two ♡</p>
+</main>
+<script type="module">
+const pin = document.querySelector('#pin');
+const keypad = document.querySelector('.keypad');
+keypad.hidden = false;
+keypad.addEventListener('click', (event) => {
+  const key = event.target.closest('button');
+  if (!key) return;
+  if (key.dataset.action === 'clear') pin.value = '';
+  else if (key.dataset.action === 'erase') pin.value = pin.value.slice(0, -1);
+  else if (pin.value.length < 4) pin.value += key.dataset.digit;
+});
+
+document.querySelector('form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector('.submit');
+  const error = document.querySelector('#pin-error');
+  button.disabled = true;
+  error.textContent = '';
+  try {
+    const response = await fetch('/api/unlock', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({pin:pin.value})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    pin.value = '';
+    const opening = document.createElement('div');
+    opening.id = 'opening-screen';
+    opening.setAttribute('role','status');
+    opening.setAttribute('aria-live','polite');
+    opening.style.cssText = 'position:fixed;inset:0;z-index:10000;display:grid;place-content:center;text-align:center;background:#fae9ef;color:#813650;font:24px system-ui';
+    opening.innerHTML = '<span aria-hidden="true" style="font-size:42px">♡</span><p>Opening our little world…</p>';
+    document.body.append(opening);
+    const {setToken, api} = await import('/private-assets/private-client.mjs');
+    setToken(result.token);
+    const shell = await api('/api/shell', {}, 'text');
+    const parsed = new DOMParser().parseFromString(shell, 'text/html');
+    parsed.querySelectorAll('script').forEach(script => script.remove());
+    const styles = [...parsed.head.querySelectorAll('link[rel="stylesheet"]')].map(link => new Promise((resolve,reject)=>{
+      link.onload = resolve;
+      link.onerror = () => reject(new Error('A page style could not load. Please reload and try again.'));
+      document.head.append(link);
+    }));
+    await Promise.all(styles);
+    document.querySelector('#lock-style').remove();
+    document.body.replaceChildren(opening,...parsed.body.childNodes);
+    if (location.pathname === '/archive') location.hash = 'moments';
+    history.replaceState(null, '', '/' + location.hash);
+    const scrapbook = await import('/private-assets/app.js');
+    await scrapbook.scrapbookReady;
+    await document.fonts.ready;
+    await Promise.race([
+      Promise.all([...document.images].filter(image=>image.loading!=='lazy').map(image=>image.decode().catch(()=>{}))),
+      new Promise(resolve=>setTimeout(resolve,2500))
+    ]);
+    opening.remove();
+  } catch (failure) {
+    document.querySelector('#opening-screen')?.remove();
+    console.error(failure.name + ': ' + failure.message);
+    if(!error.isConnected){
+      error.setAttribute('role','alert');
+      document.body.append(error);
+    }
+    error.textContent = failure.message || 'Could not connect. Please try again.';
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

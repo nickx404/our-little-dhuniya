@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:notes": "esbuild src/notes.mjs --bundle --format=esm --target=es2022 --minify --outfile=dist/notes.mjs",
+    "build:notes": "esbuild src/notes.mjs --bundle --external:./private-client.mjs --format=esm --target=es2022 --minify --outfile=dist/notes.mjs",
     "test:notes": "node --test tests/notes.test.mjs"
   },
   "dependencies": {
