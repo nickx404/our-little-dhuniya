@@ -30,6 +30,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Check shared writing logic
         run: npm run test:notes
+      - name: Check entry deletion
+        run: node --test tests/delete.test.mjs
       - name: Build shared writing module
         run: npm run build:notes
       - name: Check JavaScript

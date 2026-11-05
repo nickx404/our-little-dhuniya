@@ -1,3 +1,4 @@
+import {deleteMemory} from './delete-entry.mjs';
 import {initNotes} from './notes.mjs';
 import {notesConfig} from './notes-config.mjs';
 import {initBucketList} from './bucket-list.mjs';
@@ -66,7 +67,7 @@ function keepsakeObject(item) {
  return '<div class="letter-object">saw this &amp;<br>thought of you.<br><small>like I always do.</small></div>';
 }
 function keepsakesSection() {
- return `<section aria-labelledby="keepsakes-title"><div class="section-intro"><span class="handwritten">not much to anyone else. everything to us.</span><h2 id="keepsakes-title">The little things we kept</h2><p>A ticket, a flower, a scribbled note. A home for the tiny things with a whole story tucked inside.</p></div><div class="keepsake-grid">${keepsakes.map((item,i)=>`<article class="keepsake" style="--tilt:${i%2?-4:3}deg"><button data-keepsake="${item.id}" aria-label="Open ${escape(item.caption)}">${keepsakeObject(item)}</button><h3 class="keepsake-name">${escape(item.caption)}</h3><time class="keepsake-date" datetime="${item.date}">${dateLabel(item.date)}</time><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button></article>`).join('')}<div class="keepsake"><button class="keepsake-upload" data-action="add-keepsake"><span aria-hidden="true">＋</span>something worth keeping<small>add a little keepsake</small></button></div></div></section>`;
+ return `<section aria-labelledby="page-title"><div class="keepsake-grid">${keepsakes.map((item,i)=>`<article class="keepsake" style="--tilt:${i%2?-4:3}deg"><button data-keepsake="${item.id}" aria-label="Open ${escape(item.caption)}">${keepsakeObject(item)}</button><h3 class="keepsake-name">${escape(item.caption)}</h3><time class="keepsake-date" datetime="${item.date}">${dateLabel(item.date)}</time><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button></article>`).join('')}<div class="keepsake"><button class="keepsake-upload" data-action="add-keepsake"><span aria-hidden="true">＋</span>something worth keeping<small>add a little keepsake</small></button></div></div></section>`;
 }
 function render() {
  currentSection = ['moments','books','keepsakes','future','notes'].includes(location.hash.slice(1).split('/')[0]) ? location.hash.slice(1).split('/')[0] : 'moments';
@@ -77,6 +78,11 @@ function render() {
  document.querySelector('.intro-note').textContent=currentSection==='future'?'there is still so much waiting for us.':'the big days. the ordinary days. all of it.';
  document.querySelector('#page-title').innerHTML=currentSection==='future'?'One day, <span>you & me.</span>':'A little collection <span>of us.</span>';
  document.querySelector('.intro-description').textContent=currentSection==='future'?'Little dates, big dreams, and all the things we want to do together.':'Our photos, our stories, and the little things we never want to forget.';
+ if(currentSection==='keepsakes'){
+  document.querySelector('.intro-note').textContent='not much to anyone else. everything to us.';
+  document.querySelector('#page-title').innerHTML='The things <span>we kept.</span>';
+  document.querySelector('.intro-description').textContent='A ticket, a flower, a scribbled note. A home for the tiny things with a whole story tucked inside.';
+ }
  document.title=`for us · ${document.querySelector(`[data-nav="${currentSection}"]`).textContent}`;
  document.querySelector('.add-button').hidden=currentSection==='notes';
  if(currentSection==='notes'){
@@ -102,14 +108,15 @@ function closeViewer() {
 }
 function openMoment(id) {
  const m=moments.find(x=>x.id===id); if(!m) return;
- openViewer(`<button class="close-button" data-action="close" aria-label="Close memory">×</button>${m.kind==='video'?`<video controls playsinline preload="metadata" poster="${escape(m.src)}"><source src="${escape(m.video)}">Your browser cannot play this video.</video>`:`<img class="memory-image" src="${escape(m.src)}" alt="${escape(m.caption)}">`}<div class="memory-copy"><time datetime="${m.date}">${dateLabel(m.date)}</time><h2>${escape(m.caption)}</h2><p>${escape(m.story)}</p><button class="text-button" data-link-moment="${m.id}">add to a memory book ↗</button></div>`,'photo-viewer');
+ openViewer(`<button class="close-button" data-action="close" aria-label="Close memory">×</button>${m.kind==='video'?`<video controls playsinline preload="metadata" poster="${escape(m.src)}"><source src="${escape(m.video)}">Your browser cannot play this video.</video>`:`<img class="memory-image" src="${escape(m.src)}" alt="${escape(m.caption)}">`}<div class="memory-copy"><time datetime="${m.date}">${dateLabel(m.date)}</time><h2>${escape(m.caption)}</h2><p>${escape(m.story)}</p><button class="text-button" data-link-moment="${m.id}">add to a memory book ↗</button><button class="text-button delete-entry" data-delete="moments" data-id="${m.id}">delete this moment</button></div>`,'photo-viewer');
 }
 function openKeepsake(id) {
  const item=keepsakes.find(x=>x.id===id);if(!item)return;
- openViewer(`<button class="close-button" data-action="close" aria-label="Close keepsake">×</button><div class="viewer-keepsake">${keepsakeObject(item)}</div><div class="memory-copy"><time datetime="${item.date}">${dateLabel(item.date)}</time><h2>${escape(item.caption)}</h2><p>${escape(item.story)}</p><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button></div>`,'photo-viewer');
+ openViewer(`<button class="close-button" data-action="close" aria-label="Close keepsake">×</button><div class="viewer-keepsake">${keepsakeObject(item)}</div><div class="memory-copy"><time datetime="${item.date}">${dateLabel(item.date)}</time><h2>${escape(item.caption)}</h2><p>${escape(item.story)}</p><button class="text-button" data-link="${item.id}">tuck into a memory book ↗</button><button class="text-button delete-entry" data-delete="keepsakes" data-id="${item.id}">delete this keepsake</button></div>`,'photo-viewer');
 }
 function bookPages(book) {
- const pages=[{type:'intro',moment:moments.find(m=>m.id===book.ids[0])},{type:'letter',text:'Some days are big adventures.\nSome days are just you and me, doing nothing much at all.\n\nI want to remember both.'}];
+ const first=moments.find(m=>m.id===book.ids[0]);
+ const pages=[...(first?[{type:'intro',moment:first}]:[]),{type:'letter',text:'Some days are big adventures.\nSome days are just you and me, doing nothing much at all.\n\nI want to remember both.'}];
  for(const id of book.ids.slice(1)) {const moment=moments.find(m=>m.id===id);if(moment)pages.push({type:'photo',moment});}
  for(const id of book.keepsakeIds) {const item=keepsakes.find(k=>k.id===id);if(item)pages.push({type:'keepsake',item});}
  if(pages.length%2)pages.push({type:'ending'});
@@ -130,7 +137,7 @@ function renderReader() {
  pageIndex=Math.max(0,Math.min(pageIndex,pages.length-step));
  if(!mobile())pageIndex-=pageIndex%2;
  const title=currentBook.title;
- openViewer(`<div class="viewer-toolbar"><h2>${escape(title)}</h2><button class="close-button" data-action="close" aria-label="Close memory book">×</button></div><div class="book-reader"><div class="book-spread" id="book-spread">${pageMarkup(pages[pageIndex],pageIndex)}${!mobile()&&pages[pageIndex+1]?pageMarkup(pages[pageIndex+1],pageIndex+1):''}</div><div class="reader-controls"><button data-turn="-1" ${pageIndex===0?'disabled':''}>← previous</button><span aria-live="polite">${mobile()?`page ${pageIndex+1}`:`pages ${pageIndex+1} & ${pageIndex+2}`} of ${pages.length}</span><button data-turn="1" ${pageIndex+step>=pages.length?'disabled':''}>next →</button></div><p class="reader-hint">${mobile()?'swipe or tap to turn a page':'a little book, one page at a time'}</p></div>`,'book-viewer');
+ openViewer(`<div class="viewer-toolbar"><h2>${escape(title)}</h2><button class="text-button delete-entry" data-delete="books" data-id="${currentBook.id}">delete this book</button><button class="close-button" data-action="close" aria-label="Close memory book">×</button></div><div class="book-reader"><div class="book-spread" id="book-spread">${pageMarkup(pages[pageIndex],pageIndex)}${!mobile()&&pages[pageIndex+1]?pageMarkup(pages[pageIndex+1],pageIndex+1):''}</div><div class="reader-controls"><button data-turn="-1" ${pageIndex===0?'disabled':''}>← previous</button><span aria-live="polite">${mobile()?`page ${pageIndex+1}`:`pages ${pageIndex+1} & ${pageIndex+2}`} of ${pages.length}</span><button data-turn="1" ${pageIndex+step>=pages.length?'disabled':''}>next →</button></div><p class="reader-hint">${mobile()?'swipe or tap to turn a page':'a little book, one page at a time'}</p></div>`,'book-viewer');
 }
 function openBook(id) {currentBook=books.find(b=>b.id===id);if(!currentBook)return;pageIndex=0;renderReader();}
 function turnPage(direction) {
@@ -172,6 +179,10 @@ function showAdd(keepsake=false) {
 }
 document.addEventListener('click',event=>{
  const target=event.target.closest('button,a');if(!target)return;
+ if(target.dataset.delete){
+  if(!deleteMemory({moments,keepsakes,books},target.dataset.delete,target.dataset.id,message=>window.confirm(message)))return;
+  closeViewer();render();toast('Entry deleted from this preview.');return;
+ }
  if(target.dataset.view){view=target.dataset.view;render();return;}
  if(target.dataset.open){openMoment(target.dataset.open);return;}
  if(target.dataset.book){openBook(target.dataset.book);return;}

@@ -1,3 +1,4 @@
+import {confirmRemoval} from './delete-entry.mjs';
 const storageKey='for-us-bucket-list-v1';
 const seed={future:[
   {id:'train',title:'Take a train somewhere new',story:'Window seats. A shared playlist. No rush to get there.',kind:'adventures',timing:'someday',done:false},
@@ -27,7 +28,7 @@ export function initBucketList({escape:e, render, toast}) {
  const dialog = document.querySelector('#journal-dialog');
  const note = () => `<p class="local-note">${e(warning || 'Your wishes stay in this browser. They do not sync between devices. Sample wishes are shown to start.')}</p>`;
  const add = (section,label) => `<button class="rose-button" data-journal-add="${section}">＋ ${label}</button>`;
- const edit = (section,item) => `<button class="text-button edit-note" data-journal-edit="${section}" data-id="${e(item.id)}" aria-label="Edit ${e(item.title)}">edit this little wish ↗</button>`;
+ const edit = (section,item) => `<button class="text-button edit-note" data-journal-edit="${section}" data-id="${e(item.id)}" aria-label="Edit ${e(item.title)}">edit this little wish ↗</button>` + `<button class="text-button delete-entry" data-journal-delete="${section}" data-id="${e(item.id)}" aria-label="Delete ${e(item.title)}">delete</button>`;
  const empty = (section,text) => `<div class="journal-empty"><span aria-hidden="true">♡</span><h2>${text}</h2><p>A little room for whatever comes next.</p>${add(section,'make a wish')}</div>`;
  
  const saved = next => {
@@ -69,6 +70,15 @@ export function initBucketList({escape:e, render, toast}) {
  document.addEventListener('click',event=>{
   const target=event.target.closest('button');if(!target)return;
   if(target.dataset.journalAdd)openForm(target.dataset.journalAdd);
+  if(target.dataset.journalDelete){
+   const section=target.dataset.journalDelete;
+   if(!Array.isArray(data[section]))return;
+   const remaining=confirmRemoval(data[section],target.dataset.id,message=>window.confirm(message));
+   if(!remaining)return;
+   const next=structuredClone(data);next[section]=remaining;
+   if(saved(next)){render();toast('Entry deleted.');}
+   return;
+  }
   if(target.dataset.journalEdit)openForm(target.dataset.journalEdit,target.dataset.id);
   if(target.dataset.journalFilter){
    const section=target.dataset.journalFilter, filter=target.dataset.filter;
